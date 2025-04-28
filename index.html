@@ -1,0 +1,2188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Digital Circuit Simulator</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.4.0/p5.js"></script>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: Arial, sans-serif;
+    }
+    #canvas-container {
+      width: 100vw;
+      height: 100vh;
+      overflow: auto;
+      position: relative;
+    }
+    canvas {
+      display: block;
+    }
+    .toolbar {
+      position: fixed;
+      top: 10px;
+      left: 10px;
+      background-color: #f0f0f0;
+      padding: 10px;
+      border-radius: 5px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+      z-index: 1000;
+      display: flex;
+      flex-wrap: nowrap;
+    }
+    .toolbar button {
+      margin: 0 5px;
+      padding: 8px 12px;
+      background-color: #4CAF50;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+    .toolbar button:hover {
+      background-color: #45a049;
+    }
+    .toolbar button.selected {
+      background-color: #357a38;
+      font-weight: bold;
+    }
+    .simulate-btn {
+      position: fixed;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      padding: 10px 20px;
+      background-color: #4285f4;
+      color: white;
+      font-size: 16px;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      z-index: 1000;
+    }
+    .simulate-btn:hover {
+      background-color: #3b78e7;
+    }
+    #fileInput {
+      display: none;
+    }
+    #labelInput {
+      position: fixed;
+      border: 1px solid #000;
+      font-size: 14px;
+      padding: 2px;
+      display: none;
+      background-color: transparent;
+      width: 100px;
+      outline: none;
+      z-index: 1000;
+    }
+    #labelInput:focus {
+      border: 1px solid #4285f4;
+    }
+    #equationDialog {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background-color: white;
+      padding: 20px;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+      z-index: 2000;
+      display: none;
+    }
+    #equationDialog textarea {
+      width: 300px;
+      height: 100px;
+      resize: none;
+      font-size: 14px;
+      padding: 5px;
+    }
+    #equationDialog button {
+      margin-top: 10px;
+      padding: 8px 16px;
+      background-color: #4CAF50;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    #equationDialog button:hover {
+      background-color: #45a049;
+    }
+#truthTableDialog {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background-color: white;
+  padding: 20px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+  z-index: 2000;
+  display: none;
+  box-sizing: border-box;
+  max-width: 90vw; /* Limit to 90% of viewport width */
+  max-height: 90vh; /* Limit to 90% of viewport height */
+  overflow: auto; /* Allow scrolling if content is too large */
+}
+
+#truthTableContainer {
+  margin-bottom: 10px;
+}
+
+#truthTable {
+  border-collapse: collapse;
+  width: auto; /* Let table size based on content */
+  table-layout: auto; /* Allow cells to size based on content */
+}
+
+#truthTable th,
+#truthTable td {
+  border: 1px solid #ddd;
+  padding: 5px; /* Add padding for better spacing */
+  text-align: center;
+  min-width: 40px; /* Minimum width to prevent squashing */
+  height: 30px; /* Fixed height for consistency */
+  box-sizing: border-box;
+}
+
+#truthTable th {
+  background-color: #4CAF50;
+  color: white;
+  position: sticky;
+  top: 0;
+}
+
+#truthTable #groupHeader th {
+  background-color: #4CAF50; /* Blue background for Inputs/Outputs */
+  color: white;
+  position: sticky;
+  top: 0;
+}
+
+#truthTable #tableHeader th {
+  background-color: #4CAF50;
+  color: white;
+  position: sticky;
+  top: 32px; /* Adjust for the height of the groupHeader row */
+}
+
+#truthTable input {
+  width: 100%;
+  height: 100%;
+  text-align: center;
+  border: none;
+  box-sizing: border-box;
+  padding: 0;
+  margin: 0;
+  font-size: 12px;
+}
+
+#truthTable #tableHeader input {
+  width: 100%;
+  height: 100%;
+  text-align: center;
+  font-weight: bold;
+  border: none;
+  box-sizing: border-box;
+  padding: 0;
+  margin: 0;
+  font-size: 12px;
+}
+
+#booleanEquations {
+  width: 100%;
+  height: 100px;
+  resize: none;
+  font-size: 14px;
+  padding: 5px;
+  margin-top: 10px;
+  box-sizing: border-box;
+}
+
+#truthTableDialog button {
+  padding: 8px 16px;
+  margin: 0 5px;
+  background-color: #4CAF50;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+#truthTableDialog button:hover {
+  background-color: #45a049;
+}
+  </style>
+</head>
+<body>
+  <div id="canvas-container"></div>
+  <div class="toolbar" id="toolbar">
+    <button id="load">Load</button>
+    <button id="save">Save</button>
+    <button id="select">Select</button>
+    <button id="input">Input</button>
+    <button id="and">AND Gate</button>
+    <button id="or">OR Gate</button>
+    <button id="not">NOT Gate</button>
+    <button id="display">Display</button>
+    <button id="wire">Wire</button>
+    <button id="build">Build</button>
+  </div>
+  <input type="file" id="fileInput" accept=".xml">
+  <input type="text" id="labelInput">
+  <button class="simulate-btn" id="simulate">Simulate</button>
+  <div id="equationDialog">
+    <textarea id="equationInput" placeholder="Enter equations, one per line (e.g., A = D1+D2\nB = D1*D2)"></textarea>
+    <br>
+    <button id="buildConfirm">Build</button>
+    <button id="buildCancel">Cancel</button>
+  </div>
+<div class="toolbar" id="toolbar">
+  <button id="load">Load</button>
+  <button id="save">Save</button>
+  <button id="select">Select</button>
+  <button id="input">Input</button>
+  <button id="and">AND Gate</button>
+  <button id="or">OR Gate</button>
+  <button id="not">NOT Gate</button>
+  <button id="display">Display</button>
+  <button id="wire">Wire</button>
+  <button id="build">Build</button>
+  <button id="buildEquations">Build Equations</button>
+</div>
+
+<div id="truthTableDialog">
+  <div id="truthTableContainer">
+    <table id="truthTable">
+      <thead>
+        <tr id="groupHeader"></tr> <!-- New row for Inputs/Outputs -->
+        <tr id="tableHeader"></tr>
+      </thead>
+      <tbody id="tableBody"></tbody>
+    </table>
+  </div>
+  <textarea id="booleanEquations" readonly></textarea>
+  <br>
+  <button id="generateEquations">Build Equations</button>
+  <button id="closeTruthTable">Close</button>
+</div>
+  <script>
+    let selectedTool = 'select';
+    let components = [];
+    let wires = [];
+    let draggingComponent = null;
+    let draggingWire = null;
+    let hoverPoint = null;
+    let simulationActive = false;
+    let selectedElement = null;
+    let editingLabelComponent = null;
+    let labelInput;
+    let isEditingLabel = false;
+    let hoveredPlusButton = null; // Track which "+" button is being hovered
+
+    const GRID_SIZE = 20;
+    const snapToGrid = (val) => Math.round(val / GRID_SIZE) * GRID_SIZE;
+    const TOOLBAR_WIDTH = 600;
+    const TOOLBAR_HEIGHT = 60;
+
+    // Classes (InputComponent, AndGate, OrGate, NotGate, Display, Wire) remain unchanged
+    class Component {
+      constructor(type, x, y, numInputs = 2) {
+        this.type = type;
+        this.x = x;
+        this.y = y;
+        this.width = 60;
+        this.height = 60;
+        this.inputPoints = [];
+        this.outputPoints = [];
+        this.value = null;
+        this.numInputs = numInputs;
+        this.label = '';
+      }
+
+      draw() {
+        push();
+        translate(this.x, this.y);
+
+        if (!simulationActive && selectedElement === this) {
+          stroke(0, 100, 255);
+          strokeWeight(4);
+          noFill();
+          rect(-2, -2, this.width + 4, this.height + 4, 5);
+        }
+
+        fill(255);
+        stroke(0);
+        strokeWeight(2);
+        rect(0, 0, this.width, this.height, 5);
+
+        fill(0);
+        noStroke();
+        textAlign(CENTER, CENTER);
+        textSize(14);
+        text(this.type, this.width/2, this.height/2);
+
+        if (this.label) {
+          fill(0);
+          textSize(12);
+          text(this.label, this.width/2, -10);
+        }
+
+        this.drawPoints();
+
+        if (simulationActive && this.value !== null) {
+          fill(this.value ? '#4CAF50' : '#F44336');
+          noStroke();
+          textSize(16);
+          text(this.value ? '1' : '0', this.width + 15, this.height/2);
+        }
+
+        pop();
+      }
+
+      drawPoints() {
+        fill(100, 100, 255);
+        for (let point of this.inputPoints) {
+          if (hoverPoint && 
+              hoverPoint.parent === this && 
+              hoverPoint.point.x === point.x && 
+              hoverPoint.point.y === point.y) {
+            fill(255, 100, 100);
+            ellipse(point.x, point.y, 12, 12);
+            fill(100, 100, 255);
+          } else {
+            ellipse(point.x, point.y, 8, 8);
+          }
+        }
+
+        fill(255, 100, 100);
+        for (let point of this.outputPoints) {
+          if (hoverPoint && 
+              hoverPoint.parent === this && 
+              hoverPoint.point.x === point.x && 
+              hoverPoint.point.y === point.y) {
+            fill(100, 100, 255);
+            ellipse(point.x, point.y, 12, 12);
+            fill(255, 100, 100);
+          } else {
+            ellipse(point.x, point.y, 8, 8);
+          }
+        }
+      }
+
+      isPointInside(px, py) {
+        return px >= this.x && px <= this.x + this.width &&
+               py >= this.y && py <= this.y + this.height;
+      }
+
+      getClosestPoint(px, py) {
+        const allPoints = [...this.inputPoints, ...this.outputPoints];
+        let closestPoint = null;
+        let minDist = 15;
+
+        for (let point of allPoints) {
+          const absX = this.x + point.x;
+          const absY = this.y + point.y;
+          const d = dist(px, py, absX, absY);
+          if (d < minDist) {
+            minDist = d;
+            closestPoint = { point: point, parent: this };
+          }
+        }
+
+        return closestPoint;
+      }
+
+      evaluate() {
+        return false;
+      }
+    }
+
+    class InputComponent extends Component {
+      constructor(x, y) {
+        super('INPUT', x, y);
+        this.width = 60;
+        this.height = 40;
+        this.outputPoints = [
+          { x: this.width, y: this.height/2, type: 'output', index: 0 }
+        ];
+        this.value = false;
+      }
+
+      draw() {
+        push();
+        translate(this.x, this.y);
+
+        if (!simulationActive && selectedElement === this) {
+          stroke(0, 100, 255);
+          strokeWeight(4);
+          noFill();
+          rect(-2, -2, this.width + 4, this.height + 4, 5);
+        }
+
+        fill(255);
+        stroke(0);
+        strokeWeight(2);
+        rect(0, 0, this.width, this.height, 5);
+
+        fill(0);
+        noStroke();
+        textAlign(CENTER, CENTER);
+        textSize(14);
+        text(this.type, this.width/2, 10);
+
+        fill(this.value ? '#4CAF50' : '#F44336');
+        rect(15, 20, 30, 15, 5);
+        fill(255);
+        text(this.value ? '1' : '0', 30, 27);
+
+        if (this.label) {
+          fill(0);
+          textSize(12);
+          text(this.label, this.width/2, -10);
+        }
+
+        this.drawPoints();
+
+        if (simulationActive) {
+          fill(this.value ? '#4CAF50' : '#F44336');
+          noStroke();
+          textSize(16);
+          text(this.value ? '1' : '0', this.width + 15, this.height/2);
+        }
+
+        pop();
+      }
+
+      toggle() {
+        this.value = !this.value;
+      }
+
+      evaluate() {
+        return this.value;
+      }
+    }
+
+    class AndGate extends Component {
+      constructor(x, y, numInputs) {
+        super('AND', x, y, numInputs);
+        this.numInputs = Math.max(2, Math.min(numInputs, 10));
+        this.height = 20 + this.numInputs * 20;
+        this.inputPoints = [];
+        this.inputs = [];
+
+        for (let i = 0; i < this.numInputs; i++) {
+          this.inputPoints.push({
+            x: 0,
+            y: 10 + (i + 1) * (this.height - 20) / (this.numInputs + 1),
+            type: 'input',
+            index: i
+          });
+          this.inputs.push(null);
+        }
+
+        this.outputPoints = [
+          { x: this.width, y: this.height/2, type: 'output', index: 0 }
+        ];
+      }
+
+      evaluate() {
+        for (let i = 0; i < this.numInputs; i++) {
+          if (this.inputs[i] === null) {
+            this.value = null;
+            return null;
+          }
+        }
+        this.value = this.inputs.every(input => input === true);
+        return this.value;
+      }
+    }
+
+    class OrGate extends Component {
+      constructor(x, y, numInputs) {
+        super('OR', x, y, numInputs);
+        this.numInputs = Math.max(2, Math.min(numInputs, 10));
+        this.height = 20 + this.numInputs * 20;
+        this.inputPoints = [];
+        this.inputs = [];
+
+        for (let i = 0; i < this.numInputs; i++) {
+          this.inputPoints.push({
+            x: 0,
+            y: 10 + (i + 1) * (this.height - 20) / (this.numInputs + 1),
+            type: 'input',
+            index: i
+          });
+          this.inputs.push(null);
+        }
+
+        this.outputPoints = [
+          { x: this.width, y: this.height/2, type: 'output', index: 0 }
+        ];
+      }
+
+      evaluate() {
+        for (let i = 0; i < this.numInputs; i++) {
+          if (this.inputs[i] === null) {
+            this.value = null;
+            return null;
+          }
+        }
+        this.value = this.inputs.some(input => input === true);
+        return this.value;
+      }
+    }
+
+    class NotGate extends Component {
+      constructor(x, y) {
+        super('NOT', x, y);
+        this.height = 40;
+        this.inputPoints = [
+          { x: 0, y: 20, type: 'input', index: 0 }
+        ];
+        this.outputPoints = [
+          { x: this.width, y: 20, type: 'output', index: 0 }
+        ];
+        this.inputs = [null];
+      }
+
+      evaluate() {
+        if (this.inputs[0] === null) {
+          this.value = null;
+          return null;
+        }
+        this.value = !this.inputs[0];
+        return this.value;
+      }
+    }
+
+    class Display extends Component {
+      constructor(x, y) {
+        super('DISPLAY', x, y);
+        this.width = 80;
+        this.height = 100;
+        this.inputPoints = [
+          { x: 0, y: 10, type: 'input', index: 0, label: 'A' },
+          { x: 0, y: 25, type: 'input', index: 1, label: 'B' },
+          { x: 0, y: 40, type: 'input', index: 2, label: 'C' },
+          { x: 0, y: 55, type: 'input', index: 3, label: 'D' },
+          { x: 0, y: 70, type: 'input', index: 4, label: 'E' },
+          { x: 0, y: 85, type: 'input', index: 5, label: 'F' },
+          { x: 0, y: 100, type: 'input', index: 6, label: 'G' }
+        ];
+        this.inputs = [null, null, null, null, null, null, null];
+      }
+
+      draw() {
+        push();
+        translate(this.x, this.y);
+
+        if (!simulationActive && selectedElement === this) {
+          stroke(0, 100, 255);
+          strokeWeight(4);
+          noFill();
+          rect(-2, -2, this.width + 4, this.height + 4, 5);
+        }
+
+        fill(255);
+        stroke(0);
+        strokeWeight(2);
+        rect(0, 0, this.width, this.height, 5);
+
+        fill(0);
+        noStroke();
+        textSize(12);
+        textAlign(RIGHT, CENTER);
+        this.inputPoints.forEach(point => {
+          text(point.label, -5, point.y);
+        });
+
+        if (this.label) {
+          fill(0);
+          textSize(12);
+          textAlign(CENTER, CENTER);
+          text(this.label, this.width/2, -10);
+        }
+
+        const segWidth = 20;
+        const segHeight = 20;
+        const segThickness = 6;
+        const segOffsetX = (this.width - segWidth - 10) / 2 + 5;
+        const segOffsetY = (this.height - 2 * segHeight - 20) / 2 + 10;
+        const gap = 2;
+
+        const drawHorizontalSegment = (x, y, active) => {
+          stroke(0);
+          strokeWeight(1);
+          fill(active ? '#F44336' : 255);
+          beginShape();
+          vertex(x + 2, y);
+          vertex(x + segWidth + 2, y);
+          vertex(x + segWidth, y + segThickness);
+          vertex(x, y + segThickness);
+          endShape(CLOSE);
+        };
+
+        const drawVerticalSegment = (x, y, active) => {
+          stroke(0);
+          strokeWeight(1);
+          fill(active ? '#F44336' : 255);
+          beginShape();
+          vertex(x, y + 2);
+          vertex(x + segThickness, y);
+          vertex(x + segThickness, y + segHeight);
+          vertex(x, y + segHeight - 2);
+          endShape(CLOSE);
+        };
+
+        drawHorizontalSegment(segOffsetX, segOffsetY, this.inputs[0]);
+        drawVerticalSegment(segOffsetX + segWidth + gap, segOffsetY + gap, this.inputs[1]);
+        drawVerticalSegment(segOffsetX + segWidth + gap, segOffsetY + segHeight + 2 * gap, this.inputs[2]);
+        drawHorizontalSegment(segOffsetX, segOffsetY + 2 * segHeight + 2 * gap, this.inputs[3]);
+        drawVerticalSegment(segOffsetX - segThickness - gap, segOffsetY + segHeight + 2 * gap, this.inputs[4]);
+        drawVerticalSegment(segOffsetX - segThickness - gap, segOffsetY + gap, this.inputs[5]);
+        drawHorizontalSegment(segOffsetX, segOffsetY + segHeight + gap, this.inputs[6]);
+
+        this.drawPoints();
+        pop();
+      }
+
+      evaluate() {
+        return null;
+      }
+    }
+
+    class Wire {
+      constructor(startPoint, endPoint) {
+        this.startPoint = startPoint;
+        this.endPoint = endPoint || null;
+        this.active = false;
+      }
+
+      draw() {
+        if (!this.endPoint) return;
+
+        const startX = this.startPoint.parent.x + this.startPoint.point.x;
+        const startY = this.startPoint.parent.y + this.startPoint.point.y;
+        const endX = this.endPoint.parent.x + this.endPoint.point.x;
+        const endY = this.endPoint.parent.y + this.endPoint.point.y;
+
+        if (!simulationActive && selectedElement === this) {
+          stroke(0, 100, 255);
+          strokeWeight(7);
+          noFill();
+          beginShape();
+          vertex(startX, startY);
+          const cpDist = min(100, abs(endX - startX) / 2);
+          bezierVertex(
+            startX + cpDist, startY,
+            endX - cpDist, endY,
+            endX, endY
+          );
+          endShape();
+        }
+
+        strokeWeight(3);
+        if (simulationActive) {
+          stroke(this.active ? '#4CAF50' : '#F44336');
+        } else {
+          stroke(0);
+        }
+
+        noFill();
+        beginShape();
+        vertex(startX, startY);
+        const cpDist = min(100, abs(endX - startX) / 2);
+        bezierVertex(
+          startX + cpDist, startY,
+          endX - cpDist, endY,
+          endX, endY
+        );
+        endShape();
+      }
+
+      isPointNear(px, py) {
+        if (!this.endPoint) return false;
+
+        const startX = this.startPoint.parent.x + this.startPoint.point.x;
+        const startY = this.startPoint.parent.y + this.startPoint.point.y;
+        const endX = this.endPoint.parent.x + this.endPoint.point.x;
+        const endY = this.endPoint.parent.y + this.endPoint.point.y;
+
+        const d1 = dist(px, py, startX, startY);
+        const d2 = dist(px, py, endX, endY);
+        const wireLength = dist(startX, startY, endX, endY);
+
+        if (d1 + d2 >= wireLength - 10 && d1 + d2 <= wireLength + 10) {
+          return true;
+        }
+        return false;
+      }
+    }
+
+    function setup() {
+      const container = document.getElementById('canvas-container');
+      if (!container) {
+        console.error('Canvas container not found!');
+        return;
+      }
+      const canvas = createCanvas(1000, 1000);
+      canvas.parent(container);
+
+      document.addEventListener('contextmenu', e => e.preventDefault());
+
+      labelInput = document.getElementById('labelInput');
+
+      labelInput.addEventListener('blur', () => {
+        if (isEditingLabel) {
+          setTimeout(finishLabelEdit, 100);
+        }
+      });
+      labelInput.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') {
+          finishLabelEdit();
+        }
+      });
+
+      const buttons = document.querySelectorAll('#toolbar button');
+      buttons.forEach(button => {
+        button.addEventListener('click', function() {
+          if (this.id === 'load') {
+            document.getElementById('fileInput').click();
+          } else if (this.id === 'save') {
+            saveCircuit();
+          } else if (this.id === 'build') {
+            showEquationDialog();
+          } else if (!simulationActive) {
+            buttons.forEach(b => b.classList.remove('selected'));
+            this.classList.add('selected');
+            selectedTool = this.id;
+            draggingWire = null;
+          }
+        });
+      });
+
+      document.getElementById('fileInput').addEventListener('change', function(event) {
+        const file = event.target.files[0];
+        if (file) {
+          loadCircuit(file);
+        }
+      });
+
+      document.getElementById('simulate').addEventListener('click', function() {
+        simulationActive = !simulationActive;
+        if (simulationActive) {
+          this.textContent = 'Stop Simulation';
+          this.style.backgroundColor = '#F44336';
+          selectedElement = null;
+          finishLabelEdit();
+          runSimulation();
+        } else {
+          this.textContent = 'Simulate';
+          this.style.backgroundColor = '#4285f4';
+          resetSimulation();
+        }
+      });
+
+      document.getElementById('buildConfirm').addEventListener('click', buildCircuitFromEquations);
+      document.getElementById('buildCancel').addEventListener('click', hideEquationDialog);
+
+      document.getElementById('select').classList.add('selected');
+    }
+
+    function showEquationDialog() {
+      if (simulationActive) return;
+      const dialog = document.getElementById('equationDialog');
+      const input = document.getElementById('equationInput');
+      input.value = '';
+      dialog.style.display = 'block';
+      input.focus();
+    }
+
+    function hideEquationDialog() {
+      document.getElementById('equationDialog').style.display = 'none';
+    }
+
+    function checkOverlap(newX, newY, existingComponents, width = 60, height = 60) {
+      if (newX < TOOLBAR_WIDTH && newY < TOOLBAR_HEIGHT) {
+        return true;
+      }
+      for (let comp of existingComponents) {
+        if (Math.abs(comp.x - newX) < width &&
+            Math.abs(comp.y - newY) < height) {
+          return true;
+        }
+      }
+      return false;
+    }
+
+    function buildCircuitFromEquations() {
+      if (simulationActive) return;
+
+      const input = document.getElementById('equationInput').value.trim();
+      if (!input) {
+        hideEquationDialog();
+        return;
+      }
+
+      const equations = input.split('\n').map(line => line.trim()).filter(line => line);
+      if (equations.length === 0) {
+        alert('No valid equations entered');
+        hideEquationDialog();
+        return;
+      }
+
+      components = [];
+      wires = [];
+
+      const inputLabels = new Set();
+      const parsedEquations = [];
+      for (let eq of equations) {
+        const [outputLabel, expression] = eq.split('=').map(s => s.trim());
+        if (!outputLabel || !expression || !/^[a-zA-Z0-9]+$/.test(outputLabel)) {
+          alert(`Invalid equation format: ${eq}. Use: Label = expression`);
+          hideEquationDialog();
+          return;
+        }
+        const orTerms = expression.split('+').map(s => s.trim()).filter(term => term);
+        if (orTerms.length === 0) {
+          alert(`Invalid expression in: ${eq}`);
+          hideEquationDialog();
+          return;
+        }
+        parsedEquations.push({ outputLabel, orTerms });
+
+        orTerms.forEach(term => {
+          const correctedTerm = term.replace(/~[a-zA-Z0-9]+(?=~[a-zA-Z0-9]+)/g, match => match + '*');
+          correctedTerm.split('*').forEach(factor => {
+            const label = factor.replace('~', '').trim();
+            if (/^[a-zA-Z0-9]+$/.test(label)) inputLabels.add(label);
+          });
+        });
+      }
+
+      const xBase = 50;
+      let yBase = TOOLBAR_HEIGHT + 20;
+      const xSpacing = 120;
+      const ySpacing = 80;
+      const componentWidth = 60;
+      const componentHeight = 60;
+
+      const maxYAtX = new Map();
+      const updateMaxY = (x, y, height) => {
+        const currentMaxY = maxYAtX.get(x) || 0;
+        maxYAtX.set(x, Math.max(currentMaxY, y + height));
+      };
+
+      const getStartingY = (x) => {
+        return (maxYAtX.get(x) || TOOLBAR_HEIGHT) + 20;
+      };
+
+      const inputComponents = {};
+      let inputY = yBase;
+      const sortedLabels = Array.from(inputLabels).sort();
+      sortedLabels.forEach(label => {
+        let placed = false;
+        let currentX = xBase;
+        let currentY = inputY;
+        let attempts = 0;
+
+        while (!placed && attempts < 10) {
+          if (!checkOverlap(currentX, currentY, components, componentWidth, componentHeight)) {
+            const input = new InputComponent(currentX, currentY);
+            input.label = label;
+            components.push(input);
+            inputComponents[label] = input;
+            updateMaxY(currentX, currentY, input.height);
+            placed = true;
+          } else {
+            currentY += ySpacing / 2;
+            attempts++;
+          }
+        }
+        inputY += ySpacing;
+      });
+
+      let maxX = xBase;
+      let maxY = inputY;
+
+      parsedEquations.forEach(({ outputLabel, orTerms }, eqIndex) => {
+        const orInputs = [];
+        let gateX = xBase + xSpacing;
+        let eqY = yBase + eqIndex * ySpacing * 1.5;
+        eqY = Math.max(eqY, getStartingY(gateX));
+
+        console.log(`Processing equation ${outputLabel}: ${orTerms.join(' + ')}`);
+
+        orTerms.forEach((term, termIndex) => {
+          const correctedTerm = term.replace(/~[a-zA-Z0-9]+(?=~[a-zA-Z0-9]+)/g, match => match + '*');
+          const factors = correctedTerm.split('*').map(s => s.trim()).filter(f => f);
+          if (factors.length === 0) {
+            console.log(`Skipping empty term at index ${termIndex} in ${outputLabel}`);
+            return;
+          }
+
+          console.log(`  Term ${termIndex}: ${correctedTerm} (factors: ${factors.join(', ')})`);
+
+          let termComponent = null;
+
+          if (factors.length === 1) {
+            const factor = factors[0];
+            const needsNot = factor.startsWith('~');
+            const label = factor.replace('~', '');
+            const input = inputComponents[label];
+
+            if (!input) {
+              console.log(`    Input ${label} not found for factor ${factor}`);
+              return;
+            }
+
+            if (needsNot) {
+              let notX = gateX;
+              let notY = eqY + termIndex * ySpacing;
+              notY = Math.max(notY, getStartingY(notX));
+              let placed = false;
+              let attempts = 0;
+              let xAttempts = 0;
+              while (!placed && xAttempts < 3) {
+                while (!placed && attempts < 10) {
+                  if (!checkOverlap(notX, notY, components, componentWidth, 40)) {
+                    const notGate = new NotGate(notX, notY);
+                    components.push(notGate);
+                    wires.push(new Wire(
+                      { parent: input, point: input.outputPoints[0] },
+                      { parent: notGate, point: notGate.inputPoints[0] }
+                    ));
+                    termComponent = notGate;
+                    updateMaxY(notX, notY, 40);
+                    placed = true;
+                    maxX = Math.max(maxX, notX + componentWidth);
+                    maxY = Math.max(maxY, notY + 40);
+                    console.log(`    Added NOT gate for ${factor} at (${notX}, ${notY})`);
+                  } else {
+                    console.log(`    Overlap at (${notX}, ${notY}) for NOT gate of ${factor}`);
+                    notY += 40;
+                    attempts++;
+                  }
+                }
+                if (!placed) {
+                  notX += xSpacing / 2;
+                  notY = getStartingY(notX);
+                  attempts = 0;
+                  xAttempts++;
+                }
+              }
+              if (!placed) {
+                console.log(`    Failed to place NOT gate for ${factor} after ${xAttempts * 10} attempts`);
+              }
+            } else {
+              termComponent = input;
+              console.log(`    Using direct input ${label} for ${factor}`);
+            }
+          } else {
+            let andX = gateX;
+            let andY = eqY + termIndex * ySpacing;
+            andY = Math.max(andY, getStartingY(andX));
+            let placed = false;
+            let attempts = 0;
+            let xAttempts = 0;
+            let andGate = null;
+
+            while (!placed && xAttempts < 3) {
+              while (!placed && attempts < 10) {
+                if (!checkOverlap(andX, andY, components, componentWidth, 20 + factors.length * 20)) {
+                  andGate = new AndGate(andX, andY, factors.length);
+                  components.push(andGate);
+                  updateMaxY(andX, andY, andGate.height);
+                  placed = true;
+                  maxY = Math.max(maxY, andY + andGate.height);
+                  console.log(`    Added AND gate for ${correctedTerm} at (${andX}, ${andY})`);
+                } else {
+                  console.log(`    Overlap at (${andX}, ${andY}) for AND gate of ${correctedTerm}`);
+                  andY += ySpacing / 2;
+                  attempts++;
+                }
+              }
+              if (!placed) {
+                andX += xSpacing / 2;
+                andY = getStartingY(andX);
+                attempts = 0;
+                xAttempts++;
+              }
+            }
+
+            if (placed) {
+              let allFactorsConnected = true;
+              factors.forEach((factor, i) => {
+                const needsNot = factor.startsWith('~');
+                const label = factor.replace('~', '');
+                const input = inputComponents[label];
+
+                if (!input) {
+                  console.log(`    Input ${label} not found for factor ${factor}`);
+                  allFactorsConnected = false;
+                  return;
+                }
+
+                if (needsNot) {
+                  let notX = andX - xSpacing;
+                  let notY = andY + i * 40;
+                  notY = Math.max(notY, getStartingY(notX));
+                  let notPlaced = false;
+                  let notAttempts = 0;
+                  let notXAttempts = 0;
+                  while (!notPlaced && notXAttempts < 3) {
+                    while (!notPlaced && notAttempts < 10) {
+                      if (!checkOverlap(notX, notY, components, componentWidth, 40)) {
+                        const notGate = new NotGate(notX, notY);
+                        components.push(notGate);
+                        wires.push(new Wire(
+                          { parent: input, point: input.outputPoints[0] },
+                          { parent: notGate, point: notGate.inputPoints[0] }
+                        ));
+                        wires.push(new Wire(
+                          { parent: notGate, point: notGate.outputPoints[0] },
+                          { parent: andGate, point: andGate.inputPoints[i] }
+                        ));
+                        updateMaxY(notX, notY, 40);
+                        notPlaced = true;
+                        maxY = Math.max(maxY, notY + 40);
+                        console.log(`      Added NOT gate for ${factor} at (${notX}, ${notY})`);
+                      } else {
+                        console.log(`      Overlap at (${notX}, ${notY}) for NOT gate of ${factor}`);
+                        notY += 40;
+                        notAttempts++;
+                      }
+                    }
+                    if (!notPlaced) {
+                      notX += xSpacing / 2;
+                      notY = getStartingY(notX);
+                      notAttempts = 0;
+                      notXAttempts++;
+                    }
+                  }
+                  if (!notPlaced) {
+                    console.log(`      Failed to place NOT gate for ${factor} after ${notXAttempts * 10} attempts`);
+                    allFactorsConnected = false;
+                  }
+                } else {
+                  wires.push(new Wire(
+                    { parent: input, point: input.outputPoints[0] },
+                    { parent: andGate, point: andGate.inputPoints[i] }
+                  ));
+                  console.log(`      Connected ${label} to AND gate input ${i}`);
+                }
+              });
+
+              if (allFactorsConnected) {
+                termComponent = andGate;
+                maxX = Math.max(maxX, andX + componentWidth);
+              } else {
+                console.log(`    Failed to connect all factors for ${correctedTerm}`);
+              }
+            } else {
+              console.log(`    Failed to place AND gate for ${correctedTerm} after ${xAttempts * 10} attempts`);
+            }
+          }
+
+          if (termComponent) {
+            orInputs.push(termComponent);
+            console.log(`    Added term component to OR inputs: ${termComponent.type}`);
+          } else {
+            console.log(`    No term component created for ${correctedTerm}`);
+          }
+        });
+
+        let finalGate = null;
+        if (orInputs.length > 1) {
+          let orX = gateX + xSpacing;
+          let orY = eqY + (orInputs.length - 1) * ySpacing / 2;
+          orY = Math.max(orY, getStartingY(orX));
+          let placed = false;
+          let attempts = 0;
+          let xAttempts = 0;
+
+          while (!placed && xAttempts < 3) {
+            while (!placed && attempts < 10) {
+              if (!checkOverlap(orX, orY, components, componentWidth, 20 + orInputs.length * 20)) {
+                finalGate = new OrGate(orX, orY, orInputs.length);
+                components.push(finalGate);
+                orInputs.forEach((inputComp, i) => {
+                  if (inputComp && inputComp.outputPoints && inputComp.outputPoints[0]) {
+                    wires.push(new Wire(
+                      { parent: inputComp, point: inputComp.outputPoints[0] },
+                      { parent: finalGate, point: finalGate.inputPoints[i] }
+                    ));
+                    console.log(`    Connected ${inputComp.type} to OR gate input ${i}`);
+                  }
+                });
+                updateMaxY(orX, orY, finalGate.height);
+                placed = true;
+                maxX = Math.max(maxX, orX + componentWidth);
+                maxY = Math.max(maxY, orY + finalGate.height);
+                console.log(`  Added final OR gate for ${outputLabel} at (${orX}, ${orY}) with ${orInputs.length} inputs`);
+              } else {
+                console.log(`  Overlap at (${orX}, ${orY}) for OR gate of ${outputLabel}`);
+                orY += ySpacing / 2;
+                attempts++;
+              }
+            }
+            if (!placed) {
+              orX += xSpacing / 2;
+              orY = getStartingY(orX);
+              attempts = 0;
+              xAttempts++;
+            }
+          }
+        } else if (orInputs.length === 1 && orInputs[0]) {
+          finalGate = orInputs[0];
+          console.log(`  Using single term component as final gate for ${outputLabel}: ${finalGate.type}`);
+        } else {
+          console.log(`  No valid terms processed for ${outputLabel}`);
+        }
+
+        if (finalGate) {
+          finalGate.label = outputLabel;
+        } else {
+          console.log(`  Failed to create final gate for ${outputLabel}`);
+        }
+      });
+
+      resizeCanvas(maxX + 50, maxY + 50);
+      hideEquationDialog();
+    }
+
+    function draw() {
+      background(240);
+      drawGrid();
+
+      for (let wire of wires) {
+        wire.draw();
+      }
+
+      for (let component of components) {
+        component.draw();
+      }
+
+      if (draggingWire) {
+        strokeWeight(3);
+        stroke(100, 100, 100);
+        const startX = draggingWire.startPoint.parent.x + draggingWire.startPoint.point.x;
+        const startY = draggingWire.startPoint.parent.y + draggingWire.startPoint.point.y;
+        line(startX, startY, mouseX, mouseY);
+      }
+
+      // Draw "+" buttons in the last row and most right column
+      drawPlusButtons();
+    }
+
+    function drawGrid() {
+      stroke(200);
+      strokeWeight(1);
+      for (let x = 0; x < width; x += GRID_SIZE) {
+        line(x, 0, x, height);
+      }
+      for (let y = 0; y < height; y += GRID_SIZE) {
+        line(0, y, width, y);
+      }
+    }
+
+    function drawPlusButtons() {
+      // Draw "+" buttons in the last row (y = height - GRID_SIZE)
+      const lastRowY = height - GRID_SIZE;
+      for (let x = 0; x < width - GRID_SIZE; x += GRID_SIZE) {
+        const isHovered = hoveredPlusButton && hoveredPlusButton.x === x && hoveredPlusButton.y === lastRowY;
+        drawSinglePlusButton(x, lastRowY, isHovered);
+      }
+
+      // Draw "+" buttons in the most right column (x = width - GRID_SIZE)
+      const lastColX = width - GRID_SIZE;
+      for (let y = 0; y < height - GRID_SIZE; y += GRID_SIZE) {
+        const isHovered = hoveredPlusButton && hoveredPlusButton.x === lastColX && hoveredPlusButton.y === y;
+        drawSinglePlusButton(lastColX, y, isHovered);
+      }
+
+      // Draw the intersection cell (lastColX, lastRowY) as part of the last row
+      const isIntersectionHovered = hoveredPlusButton && hoveredPlusButton.x === lastColX && hoveredPlusButton.y === lastRowY;
+      drawSinglePlusButton(lastColX, lastRowY, isIntersectionHovered);
+    }
+
+    function drawSinglePlusButton(x, y, isHovered) {
+      // Highlight if hovering
+      fill(isHovered ? '#FFD700' : '#D3D3D3');
+      stroke(0);
+      strokeWeight(1);
+      rect(x, y, GRID_SIZE, GRID_SIZE);
+
+      // Draw "+" symbol
+      stroke(0);
+      strokeWeight(2);
+      const centerX = x + GRID_SIZE / 2;
+      const centerY = y + GRID_SIZE / 2;
+      line(centerX - 5, centerY, centerX + 5, centerY); // Horizontal line
+      line(centerX, centerY - 5, centerX, centerY + 5); // Vertical line
+    }
+
+    function mousePressed() {
+      const toolbar = document.getElementById('toolbar');
+      const toolbarRect = toolbar.getBoundingClientRect();
+      if (
+        mouseX >= toolbarRect.left &&
+        mouseX <= toolbarRect.right &&
+        mouseY >= toolbarRect.top &&
+        mouseY <= toolbarRect.bottom
+      ) {
+        return;
+      }
+
+      // Check if a "+" button is clicked
+      const lastRowY = height - GRID_SIZE;
+      const lastColX = width - GRID_SIZE;
+
+      // Check last row (including intersection)
+      if (mouseY >= lastRowY && mouseY <= height) {
+        const gridX = Math.floor(mouseX / GRID_SIZE) * GRID_SIZE;
+        if (gridX >= 0 && gridX <= width - GRID_SIZE) {
+          expandCanvasVertically();
+          return;
+        }
+      }
+
+      // Check most right column (excluding intersection)
+      if (mouseX >= lastColX && mouseX <= width) {
+        const gridY = Math.floor(mouseY / GRID_SIZE) * GRID_SIZE;
+        if (gridY >= 0 && gridY < lastRowY) {
+          expandCanvasHorizontally();
+          return;
+        }
+      }
+
+      if (mouseButton === LEFT) {
+        if (simulationActive) {
+          for (let component of components) {
+            if (component.type === 'INPUT' && component.isPointInside(mouseX, mouseY)) {
+              component.toggle();
+              runSimulation();
+              return;
+            }
+          }
+        } else {
+          if (selectedTool === 'wire') {
+            for (let component of components) {
+              const point = component.getClosestPoint(mouseX, mouseY);
+              if (point && point.point.type === 'output') {
+                draggingWire = new Wire(point);
+                return;
+              }
+            }
+          } else if (selectedTool === 'select') {
+            for (let wire of wires) {
+              if (wire.isPointNear(mouseX, mouseY)) {
+                selectedElement = wire;
+                return;
+              }
+            }
+            for (let component of components) {
+              if (component.isPointInside(mouseX, mouseY)) {
+                selectedElement = component;
+                draggingComponent = component;
+                return;
+              }
+            }
+            selectedElement = null;
+          }
+
+          const toolbarHeight = TOOLBAR_HEIGHT + 20;
+          if (mouseY > toolbarHeight && ['input', 'and', 'or', 'not', 'display'].includes(selectedTool)) {
+            const gridX = snapToGrid(mouseX);
+            const gridY = snapToGrid(mouseY);
+
+            let numInputs = 2;
+            if (selectedTool === 'and' || selectedTool === 'or') {
+              const inputPrompt = prompt('Enter the number of inputs (2-10):', '2');
+              numInputs = parseInt(inputPrompt);
+              if (isNaN(numInputs) || numInputs < 2 || numInputs > 10) {
+                numInputs = 2;
+              }
+            }
+
+            let newComponent;
+            switch (selectedTool) {
+              case 'input':
+                newComponent = new InputComponent(gridX, gridY);
+                break;
+              case 'and':
+                newComponent = new AndGate(gridX, gridY, numInputs);
+                break;
+              case 'or':
+                newComponent = new OrGate(gridX, gridY, numInputs);
+                break;
+              case 'not':
+                newComponent = new NotGate(gridX, gridY);
+                break;
+              case 'display':
+                newComponent = new Display(gridX, gridY);
+                break;
+            }
+            components.push(newComponent);
+            selectedElement = newComponent;
+          }
+        }
+      }
+
+      if (mouseButton === RIGHT && !simulationActive) {
+        for (let component of components) {
+          if (component.isPointInside(mouseX, mouseY)) {
+            const buttons = document.querySelectorAll('#toolbar button');
+            buttons.forEach(b => b.classList.remove('selected'));
+            document.getElementById('select').classList.add('selected');
+            selectedTool = 'select';
+            selectedElement = component;
+            startLabelEdit(component);
+            return;
+          }
+        }
+      }
+    }
+
+    function expandCanvasHorizontally() {
+      const expandAmount = 40 * GRID_SIZE; // 40 grid rectangles = 800 pixels
+      const newWidth = width + expandAmount;
+      resizeCanvas(newWidth, height);
+      console.log(`Canvas expanded horizontally to ${newWidth}x${height}`);
+    }
+
+    function expandCanvasVertically() {
+      const expandAmount = 40 * GRID_SIZE; // 40 grid rectangles = 800 pixels
+      const newHeight = height + expandAmount;
+      resizeCanvas(width, newHeight);
+      console.log(`Canvas expanded vertically to ${width}x${newHeight}`);
+    }
+
+    function mouseMoved() {
+      hoverPoint = null;
+      if (!simulationActive && selectedTool === 'wire') {
+        for (let component of components) {
+          const point = component.getClosestPoint(mouseX, mouseY);
+          if (point) {
+            hoverPoint = point;
+            break;
+          }
+        }
+      }
+
+      // Check if mouse is over a "+" button
+      hoveredPlusButton = null;
+      const lastRowY = height - GRID_SIZE;
+      const lastColX = width - GRID_SIZE;
+
+      // Check last row (including intersection)
+      if (mouseY >= lastRowY && mouseY <= height) {
+        const gridX = Math.floor(mouseX / GRID_SIZE) * GRID_SIZE;
+        if (gridX >= 0 && gridX <= width - GRID_SIZE) {
+          hoveredPlusButton = { x: gridX, y: lastRowY };
+        }
+      }
+
+      // Check most right column (excluding intersection)
+      if (mouseX >= lastColX && mouseX <= width) {
+        const gridY = Math.floor(mouseY / GRID_SIZE) * GRID_SIZE;
+        if (gridY >= 0 && gridY < lastRowY) {
+          hoveredPlusButton = { x: lastColX, y: gridY };
+        }
+      }
+    }
+
+    function mouseDragged() {
+      if (!simulationActive && draggingComponent && selectedTool === 'select') {
+        draggingComponent.x = snapToGrid(mouseX - draggingComponent.width / 2);
+        draggingComponent.y = snapToGrid(mouseY - draggingComponent.height / 2);
+        if (draggingComponent.x < TOOLBAR_WIDTH && draggingComponent.y < TOOLBAR_HEIGHT) {
+          draggingComponent.y = TOOLBAR_HEIGHT + 20;
+        }
+      }
+    }
+
+    function mouseReleased() {
+      if (!simulationActive) {
+        draggingComponent = null;
+
+        if (draggingWire) {
+          let validEndPoint = null;
+
+          for (let component of components) {
+            const point = component.getClosestPoint(mouseX, mouseY);
+            if (point && point.point.type === 'input' && 
+                draggingWire.startPoint.point.type !== point.point.type &&
+                draggingWire.startPoint.parent !== point.parent) {
+              
+              const existingWireIndex = wires.findIndex(wire => 
+                wire.endPoint && 
+                wire.endPoint.parent === point.parent && 
+                wire.endPoint.point.index === point.point.index
+              );
+
+              if (existingWireIndex >= 0) {
+                wires.splice(existingWireIndex, 1);
+              }
+
+              validEndPoint = point;
+              break;
+            }
+          }
+
+          if (validEndPoint) {
+            draggingWire.endPoint = validEndPoint;
+            wires.push(draggingWire);
+            selectedElement = draggingWire;
+          }
+          draggingWire = null;
+        }
+      }
+    }
+
+    function keyPressed() {
+      if (!simulationActive && keyCode === DELETE) {
+        deleteSelected();
+      }
+    }
+
+    function runSimulation() {
+      resetSimulation();
+      const MAX_ITERATIONS = 10;
+      for (let i = 0; i < MAX_ITERATIONS; i++) {
+        processWires();
+        evaluateComponents();
+      }
+    }
+
+    function resetSimulation() {
+      for (let component of components) {
+        if (component.type !== 'INPUT') {
+          component.value = null;
+          if (component.inputs) {
+            for (let i = 0; i < component.inputs.length; i++) {
+              component.inputs[i] = null;
+            }
+          }
+        }
+      }
+      for (let wire of wires) {
+        wire.active = false;
+      }
+    }
+
+    function processWires() {
+      for (let wire of wires) {
+        if (!wire.endPoint) continue;
+        const sourceComponent = wire.startPoint.parent;
+        const targetComponent = wire.endPoint.parent;
+        const inputIndex = wire.endPoint.point.index;
+        if (sourceComponent.value !== null) {
+          targetComponent.inputs[inputIndex] = sourceComponent.value;
+          wire.active = sourceComponent.value;
+        }
+      }
+    }
+
+    function evaluateComponents() {
+      for (let component of components) {
+        component.evaluate();
+      }
+    }
+
+    function saveCircuit() {
+      const xmlDoc = document.implementation.createDocument('', '', null);
+      const circuit = xmlDoc.createElement('circuit');
+      xmlDoc.appendChild(circuit);
+
+      const comps = xmlDoc.createElement('components');
+      components.forEach((comp, index) => {
+        const compElement = xmlDoc.createElement('component');
+        compElement.setAttribute('id', index);
+        compElement.setAttribute('type', comp.type);
+        compElement.setAttribute('x', comp.x);
+        compElement.setAttribute('y', comp.y);
+        if (comp.type === 'AND' || comp.type === 'OR') {
+          compElement.setAttribute('numInputs', comp.numInputs);
+        }
+        if (comp.type === 'INPUT') {
+          compElement.setAttribute('value', comp.value.toString());
+        }
+        if (comp.label) {
+          compElement.setAttribute('label', comp.label);
+        }
+        comps.appendChild(compElement);
+      });
+      circuit.appendChild(comps);
+
+      const wiresElement = xmlDoc.createElement('wires');
+      wires.forEach(wire => {
+        const wireElement = xmlDoc.createElement('wire');
+        const startComp = components.indexOf(wire.startPoint.parent);
+        const endComp = components.indexOf(wire.endPoint.parent);
+        wireElement.setAttribute('startComponent', startComp);
+        wireElement.setAttribute('startPointIndex', wire.startPoint.point.index || 0);
+        wireElement.setAttribute('endComponent', endComp);
+        wireElement.setAttribute('endPointIndex', wire.endPoint.point.index);
+        wiresElement.appendChild(wireElement);
+      });
+      circuit.appendChild(wiresElement);
+
+      const serializer = new XMLSerializer();
+      const xmlStr = serializer.serializeToString(xmlDoc);
+
+      const blob = new Blob([xmlStr], { type: 'application/xml' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'circuit.xml';
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+
+    function loadCircuit(file) {
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        const parser = new DOMParser();
+        const xmlDoc = parser.parseFromString(e.target.result, 'application/xml');
+
+        components = [];
+        wires = [];
+        selectedElement = null;
+
+        const compElements = xmlDoc.getElementsByTagName('component');
+        for (let compElement of compElements) {
+          const type = compElement.getAttribute('type');
+          const x = parseFloat(compElement.getAttribute('x'));
+          const y = parseFloat(compElement.getAttribute('y'));
+          const label = compElement.getAttribute('label') || '';
+          let component;
+
+          switch (type) {
+            case 'INPUT':
+              component = new InputComponent(x, y);
+              component.value = compElement.getAttribute('value') === 'true';
+              break;
+            case 'AND':
+              component = new AndGate(x, y, parseInt(compElement.getAttribute('numInputs')));
+              break;
+            case 'OR':
+              component = new OrGate(x, y, parseInt(compElement.getAttribute('numInputs')));
+              break;
+            case 'NOT':
+              component = new NotGate(x, y);
+              break;
+            case 'DISPLAY':
+              component = new Display(x, y);
+              break;
+          }
+          component.label = label;
+          components.push(component);
+        }
+
+        const wireElements = xmlDoc.getElementsByTagName('wire');
+        for (let wireElement of wireElements) {
+          const startCompIdx = parseInt(wireElement.getAttribute('startComponent'));
+          const startPointIdx = parseInt(wireElement.getAttribute('startPointIndex'));
+          const endCompIdx = parseInt(wireElement.getAttribute('endComponent'));
+          const endPointIdx = parseInt(wireElement.getAttribute('endPointIndex'));
+
+          const startComp = components[startCompIdx];
+          const endComp = components[endCompIdx];
+
+          const startPoint = {
+            parent: startComp,
+            point: startComp.outputPoints[startPointIdx] || startComp.inputPoints[startPointIdx]
+          };
+          const endPoint = {
+            parent: endComp,
+            point: endComp.inputPoints[endPointIdx]
+          };
+
+          wires.push(new Wire(startPoint, endPoint));
+        }
+
+        let maxX = Math.max(...components.map(c => c.x + (c.width || 60)), 1000);
+        let maxY = Math.max(...components.map(c => c.y + (c.height || 60)), 1000);
+        resizeCanvas(maxX + 50, maxY + 50);
+
+        document.getElementById('fileInput').value = '';
+      };
+      reader.readAsText(file);
+    }
+
+    function deleteSelected() {
+      if (selectedElement) {
+        if (components.includes(selectedElement)) {
+          wires = wires.filter(wire => 
+            wire.startPoint.parent !== selectedElement && wire.endPoint?.parent !== selectedElement
+          );
+          components = components.filter(comp => comp !== selectedElement);
+        } else if (wires.includes(selectedElement)) {
+          wires = wires.filter(wire => wire !== selectedElement);
+        }
+        selectedElement = null;
+      }
+    }
+
+    function startLabelEdit(component) {
+      editingLabelComponent = component;
+      labelInput.value = component.label || '';
+      labelInput.style.left = `${component.x + component.width/2 - 50}px`;
+      labelInput.style.top = `${component.y - 25}px`;
+      labelInput.style.display = 'block';
+      isEditingLabel = true;
+      setTimeout(() => {
+        labelInput.focus();
+        labelInput.select();
+      }, 0);
+    }
+
+    function finishLabelEdit() {
+      if (editingLabelComponent) {
+        editingLabelComponent.label = labelInput.value.trim();
+        editingLabelComponent = null;
+      }
+      labelInput.style.display = 'none';
+      isEditingLabel = false;
+    }
+	
+// Global variables to store numInputs and numOutputs
+let currentNumInputs = 0;
+let currentNumOutputs = 0;
+
+// Add event listener for Build Equations button
+document.getElementById('buildEquations').addEventListener('click', showTruthTableDialog);
+
+// Show dialog to input number of inputs and outputs
+function showTruthTableDialog() {
+  if (simulationActive) return;
+
+  currentNumInputs = parseInt(prompt('Enter number of inputs (1-20):', '2'));
+  if (isNaN(currentNumInputs) || currentNumInputs < 1 || currentNumInputs > 20) {
+    alert('Please enter a valid number of inputs (1-20)');
+    return;
+  }
+
+  currentNumOutputs = parseInt(prompt('Enter number of outputs (1-20):', '2'));
+  if (isNaN(currentNumOutputs) || currentNumOutputs < 1 || currentNumOutputs > 20) {
+    alert('Please enter a valid number of outputs (1-20)');
+    return;
+  }
+
+  // Create table and adjust size
+  createTruthTable(currentNumInputs, currentNumOutputs);
+
+  // Show dialog after table is created
+  const dialog = document.getElementById('truthTableDialog');
+  dialog.style.display = 'block';
+
+  // Delay the initial duplicate check until the dialog is fully rendered
+  setTimeout(() => {
+    checkDuplicateRows(currentNumInputs);
+  }, 100); // Small delay to ensure DOM is fully updated
+}
+
+// Create the truth table dynamically
+function createTruthTable(numInputs, numOutputs) {
+  const groupHeaderRow = document.getElementById('groupHeader');
+  const headerRow = document.getElementById('tableHeader');
+  const tableBody = document.getElementById('tableBody');
+  groupHeaderRow.innerHTML = '';
+  headerRow.innerHTML = '';
+  tableBody.innerHTML = '';
+
+  // Add "Inputs" and "Outputs" headers
+  const inputsHeader = document.createElement('th');
+  inputsHeader.textContent = 'Inputs';
+  inputsHeader.colSpan = numInputs;
+  groupHeaderRow.appendChild(inputsHeader);
+
+  const outputsHeader = document.createElement('th');
+  outputsHeader.textContent = 'Outputs';
+  outputsHeader.colSpan = numOutputs;
+  groupHeaderRow.appendChild(outputsHeader);
+
+  // Add input headers (D0, D1, ...)
+  for (let i = numInputs - 1; i >= 0; i--) {
+    const th = document.createElement('th');
+    const input = document.createElement('input');
+    input.type = 'text';
+    input.value = `D${i}`;
+    input.addEventListener('input', function(e) {
+      validateHeaderLabels();
+    });
+    th.appendChild(input);
+    headerRow.appendChild(th);
+  }
+
+  // Add output headers (A, B, ...)
+  // Add output headers (A, B, ...)
+  const outputLabels = Array.from({length: 20}, (_, i) => String.fromCharCode(65 + i)); // A to T
+  for (let i = 0; i < numOutputs; i++) {
+    const th = document.createElement('th');
+    const input = document.createElement('input');
+    input.type = 'text';
+    input.value = outputLabels[i];
+    input.addEventListener('input', function(e) {
+      validateHeaderLabels();
+    });
+    th.appendChild(input); // Fixed: Append input to th
+    headerRow.appendChild(th);
+  }
+
+  // Generate all possible input combinations
+  const numRows = Math.pow(2, numInputs);
+  for (let i = 0; i < numRows; i++) {
+    const row = document.createElement('tr');
+    
+    // Add input cells (editable)
+    for (let j = numInputs - 1; j >= 0; j--) {
+      const td = document.createElement('td');
+      const input = document.createElement('input');
+      input.type = 'text';
+      const bit = (i >> j) & 1; // Generate binary value for this position
+      input.value = bit.toString();
+      input.maxLength = 1;
+      input.addEventListener('input', function(e) {
+        if (!/[0-1]/.test(this.value)) {
+          this.value = '0';
+        }
+        // Debounce the duplicate check to avoid race conditions
+        setTimeout(() => {
+          checkDuplicateRows(numInputs);
+        }, 50);
+      });
+      td.appendChild(input);
+      row.appendChild(td);
+    }
+
+    // Add output cells (editable)
+    for (let j = 0; j < numOutputs; j++) {
+      const td = document.createElement('td');
+      const input = document.createElement('input');
+      input.type = 'text';
+      input.value = '0';
+      input.maxLength = 1;
+      input.addEventListener('input', function(e) {
+        // Allow 0, 1, or X (case-insensitive)
+        const value = this.value.toUpperCase();
+        if (!/[0-1X]/.test(value)) {
+          this.value = '0';
+        } else {
+          this.value = value; // Ensure the value is updated to uppercase X if entered
+        }
+      });
+      td.appendChild(input);
+      row.appendChild(td);
+    }
+
+    tableBody.appendChild(row);
+  }
+
+  // Clear previous equations
+  document.getElementById('booleanEquations').value = '';
+
+  // Adjust dialog size to fit content
+  adjustDialogSize(numInputs, numOutputs, numRows);
+}
+
+function adjustDialogSize(numInputs, numOutputs, numRows) {
+  const dialog = document.getElementById('truthTableDialog');
+  const table = document.getElementById('truthTable');
+  const textarea = document.getElementById('booleanEquations');
+  const buttons = document.querySelectorAll('#truthTableDialog button');
+
+  // Estimate table dimensions
+  const cellWidth = 50; // Approx min-width (40px) + padding (5px + 5px)
+  const cellHeight = 40; // Approx height (30px) + padding (5px + 5px)
+  const headerHeight = 64; // Two header rows (~32px each)
+  const textareaHeight = 100; // Fixed height of textarea
+  const buttonHeight = 40; // Approx height of button row
+  const padding = 40; // Dialog padding (20px top + 20px bottom)
+  const margin = 20; // Margin between table, textarea, and buttons
+
+  // Calculate total columns
+  const totalCols = numInputs + numOutputs;
+
+  // Calculate desired dimensions
+  let desiredWidth = totalCols * cellWidth + 40; // Table width + dialog padding
+  let desiredHeight = numRows * cellHeight + headerHeight + textareaHeight + buttonHeight + padding + 2 * margin;
+
+  // Limit to viewport constraints
+  const maxWidth = window.innerWidth * 0.9; // 90% of viewport width
+  const maxHeight = window.innerHeight * 0.9; // 90% of viewport height
+  desiredWidth = Math.min(desiredWidth, maxWidth);
+  desiredHeight = Math.min(desiredHeight, maxHeight);
+
+  // Apply styles
+  dialog.style.width = `${desiredWidth}px`;
+  dialog.style.height = `${desiredHeight}px`;
+
+  // Ensure dialog stays centered
+  dialog.style.top = '50%';
+  dialog.style.left = '50%';
+  dialog.style.transform = 'translate(-50%, -50%)';
+
+  // Force reflow to ensure table renders correctly
+  table.style.display = 'none';
+  table.offsetHeight; // Trigger reflow
+  table.style.display = 'table';
+}
+
+// Validate header labels to ensure they are unique and valid
+function validateHeaderLabels() {
+  const headerRow = document.getElementById('tableHeader');
+  const headers = headerRow.getElementsByTagName('th');
+  const seenLabels = new Set();
+
+  for (let i = 0; i < headers.length; i++) {
+    const input = headers[i].getElementsByTagName('input')[0];
+    const label = input.value.trim();
+
+    // Validate label format (alphanumeric, no spaces)
+    if (!/^[a-zA-Z0-9]+$/.test(label)) {
+      input.style.backgroundColor = '#ffcccc';
+      alert(`Invalid label "${label}" in column ${i + 1}. Labels must be alphanumeric with no spaces.`);
+      input.value = i < headers.length / 2 ? `D${headers.length / 2 - 1 - i}` : String.fromCharCode(65 + (i - headers.length / 2));
+      continue;
+    }
+
+    // Check for duplicates
+    if (seenLabels.has(label)) {
+      input.style.backgroundColor = '#ffcccc';
+      alert(`Duplicate label "${label}" in column ${i + 1}. All labels must be unique.`);
+      input.value = i < headers.length / 2 ? `D${headers.length / 2 - 1 - i}` : String.fromCharCode(65 + (i - headers.length / 2));
+    } else {
+      input.style.backgroundColor = '';
+      seenLabels.add(label);
+    }
+  }
+}
+
+// Check for duplicate input combinations (only consider input columns)
+function checkDuplicateRows(numInputs) {
+  const tableBody = document.getElementById('tableBody');
+  const rows = tableBody.getElementsByTagName('tr');
+  const numOutputs = document.querySelectorAll('#tableHeader th').length - numInputs;
+  const seenInputs = new Set();
+
+  // Clear any previous highlighting
+  for (let i = 0; i < rows.length; i++) {
+    rows[i].style.backgroundColor = '';
+  }
+
+  // Check each row for duplicates in input columns only
+  for (let i = 0; i < rows.length; i++) {
+    const cells = rows[i].getElementsByTagName('td');
+    let inputCombo = '';
+    let fullRow = ''; // For debugging
+
+    console.log(`Row ${i + 1} has ${cells.length} cells, expected ${numInputs + numOutputs}`);
+
+    // Build the input combination string from the input columns only (first numInputs columns)
+    for (let j = 0; j < numInputs; j++) {
+      const inputCell = cells[j].getElementsByTagName('input')[0];
+      const value = inputCell.value || '0'; // Fallback to '0' if value is not set
+      inputCombo += value;
+      fullRow += value;
+    }
+
+    // Build the rest of the row for debugging (output columns)
+    for (let j = numInputs; j < numInputs + numOutputs; j++) {
+      if (cells[j]) { // Check if the cell exists
+        const outputCell = cells[j].getElementsByTagName('input')[0];
+        const value = outputCell.value || '0';
+        fullRow += value;
+      } else {
+        fullRow += 'X'; // Indicate missing cell
+      }
+    }
+
+    console.log(`Row ${i + 1} - Inputs: ${inputCombo}, Full Row (including outputs): ${fullRow}`);
+
+    if (seenInputs.has(inputCombo)) {
+      // Highlight duplicate row
+      rows[i].style.backgroundColor = '#ffcccc';
+      alert(`Duplicate input combination "${inputCombo}" found in row ${i + 1}. Each row must have a unique input combination.`);
+      return false; // Indicate duplicates were found
+    } else {
+      seenInputs.add(inputCombo);
+    }
+  }
+
+  console.log(`Total unique input combinations: ${seenInputs.size}, Expected: ${rows.length}`);
+  return true; // No duplicates found
+}
+
+// Helper function to combine terms for optimization
+function combineTerms(term1, term2) {
+  let differences = 0;
+  let combined = [];
+  for (let i = 0; i < term1.length; i++) {
+    if (term1[i].value !== term2[i].value) {
+      differences++;
+      combined.push({ index: term1[i].index, value: '-', label: term1[i].label });
+    } else {
+      combined.push({ index: term1[i].index, value: term1[i].value, label: term1[i].label });
+    }
+  }
+  return differences === 1 ? combined : null; // Only combine if they differ by exactly one bit
+}
+
+// Helper function to check if term1 is covered by term2
+function isCovered(term1, term2) {
+  for (let i = 0; i < term1.length; i++) {
+    if (term2[i].value !== '-' && term1[i].value !== term2[i].value) {
+      return false;
+    }
+  }
+  return true;
+}
+
+// Optimize equations using Quine-McCluskey method
+function optimizeEquations(minterms, dontCares, numInputs) {
+  // Step 1: Group terms by number of 1s
+  let allTerms = [...minterms, ...dontCares];
+  let groups = Array(numInputs + 1).fill().map(() => []);
+  allTerms.forEach((term, idx) => {
+    let ones = term.reduce((count, input) => count + (input.value === '1' ? 1 : 0), 0);
+    groups[ones].push({ term, originalIndex: idx, used: false });
+  });
+
+  // Step 2: Combine terms to find prime implicants
+  let primeImplicants = [];
+  let currentGroups = groups;
+  while (true) {
+    let nextGroups = Array(numInputs + 1).fill().map(() => []);
+    let hasCombinations = false;
+
+    for (let g = 0; g < currentGroups.length - 1; g++) {
+      for (let i = 0; i < currentGroups[g].length; i++) {
+        for (let j = 0; j < currentGroups[g + 1].length; j++) {
+          let term1 = currentGroups[g][i];
+          let term2 = currentGroups[g + 1][j];
+          let combined = combineTerms(term1.term, term2.term);
+          if (combined) {
+            hasCombinations = true;
+            term1.used = true;
+            term2.used = true;
+            let ones = combined.reduce((count, input) => count + (input.value === '1' ? 1 : 0), 0);
+            let indices = [...(term1.originalIndices || [term1.originalIndex]), ...(term2.originalIndices || [term2.originalIndex])];
+            // Avoid duplicates
+            if (!nextGroups[ones].some(t => JSON.stringify(t.term) === JSON.stringify(combined))) {
+              nextGroups[ones].push({ term: combined, originalIndices: indices });
+            }
+          }
+        }
+      }
+    }
+
+    // Add unused terms as prime implicants
+    currentGroups.forEach(group => {
+      group.forEach(term => {
+        if (!term.used) {
+          primeImplicants.push(term);
+        }
+      });
+    });
+
+    if (!hasCombinations) break;
+    currentGroups = nextGroups;
+  }
+
+  // Remove duplicates in prime implicants
+  primeImplicants = primeImplicants.filter((pi, idx, self) =>
+    idx === self.findIndex(p => JSON.stringify(p.term) === JSON.stringify(pi.term))
+  );
+
+  // Filter prime implicants that cover at least one minterm
+  primeImplicants = primeImplicants.filter(pi => {
+    return pi.originalIndices.some(idx => idx < minterms.length);
+  });
+
+  // Step 3: Select minimal set of prime implicants
+  let remainingMinterms = minterms.map((_, idx) => idx);
+  let selectedImplicants = [];
+
+  while (remainingMinterms.length > 0) {
+    // Build coverage map
+    let coverageMap = new Map();
+    remainingMinterms.forEach(mintermIdx => {
+      let coveringPIs = [];
+      primeImplicants.forEach((pi, piIdx) => {
+        if (isCovered(minterms[mintermIdx], pi.term)) {
+          coveringPIs.push(piIdx);
+        }
+      });
+      coverageMap.set(mintermIdx, coveringPIs);
+    });
+
+    // Find essential prime implicants
+    let essentialPIIdx = -1;
+    let maxUniqueCoverage = 0;
+    let bestCoverage = [];
+
+    primeImplicants.forEach((pi, piIdx) => {
+      let coveredMinterms = remainingMinterms.filter(mintermIdx => isCovered(minterms[mintermIdx], pi.term));
+      let uniqueCoverage = coveredMinterms.filter(mintermIdx => {
+        let coveringPIs = coverageMap.get(mintermIdx);
+        return coveringPIs.length === 1 && coveringPIs[0] === piIdx;
+      }).length;
+
+      // Prefer implicants with more unique coverage
+      if (uniqueCoverage > maxUniqueCoverage) {
+        maxUniqueCoverage = uniqueCoverage;
+        essentialPIIdx = piIdx;
+        bestCoverage = coveredMinterms;
+      } else if (uniqueCoverage === maxUniqueCoverage && coveredMinterms.length > bestCoverage.length) {
+        essentialPIIdx = piIdx;
+        bestCoverage = coveredMinterms;
+      }
+    });
+
+    if (essentialPIIdx !== -1) {
+      selectedImplicants.push(primeImplicants[essentialPIIdx]);
+      remainingMinterms = remainingMinterms.filter(mintermIdx => !bestCoverage.includes(mintermIdx));
+    } else {
+      // If no essential PIs, pick the one that covers the most remaining minterms
+      let bestPIIdx = -1;
+      let maxCoverage = 0;
+      let bestCoverage = [];
+
+      primeImplicants.forEach((pi, piIdx) => {
+        let coverage = remainingMinterms.filter(mintermIdx => isCovered(minterms[mintermIdx], pi.term));
+        if (coverage.length > maxCoverage) {
+          maxCoverage = coverage.length;
+          bestCoverage = coverage;
+          bestPIIdx = piIdx;
+        }
+      });
+
+      if (bestPIIdx !== -1) {
+        selectedImplicants.push(primeImplicants[bestPIIdx]);
+        remainingMinterms = remainingMinterms.filter(mintermIdx => !bestCoverage.includes(mintermIdx));
+      } else {
+        break;
+      }
+    }
+  }
+
+  return selectedImplicants.map(pi => pi.term);
+}
+
+// Generate simplified Boolean equations
+document.getElementById('generateEquations').addEventListener('click', function() {
+  const tableBody = document.getElementById('tableBody');
+  const headerRow = document.getElementById('tableHeader');
+  const rows = tableBody.getElementsByTagName('tr');
+  const headers = headerRow.getElementsByTagName('th');
+  const numInputs = currentNumInputs;
+  const numOutputs = currentNumOutputs;
+  let equations = [];
+
+  // Get input and output labels
+  const inputLabels = [];
+  const outputLabels = [];
+  for (let i = 0; i < headers.length; i++) {
+    const label = headers[i].getElementsByTagName('input')[0].value.trim();
+    if (i < numInputs) {
+      inputLabels[i] = label; // Corrected line
+    } else {
+      outputLabels[i - numInputs] = label;
+    }
+  }
+
+  // Check for duplicate input combinations
+  if (!checkDuplicateRows(numInputs)) return;
+
+  // For each output
+  for (let outputIdx = 0; outputIdx < numOutputs; outputIdx++) {
+    let minterms = [];
+    let dontCares = [];
+
+    // Find rows where output is 1 (minterms) or X (don't cares)
+    for (let i = 0; i < rows.length; i++) {
+      const cells = rows[i].getElementsByTagName('td');
+      const outputCell = cells[numInputs + outputIdx].getElementsByTagName('input')[0];
+      const outputValue = outputCell.value || '0';
+
+      let minterm = [];
+      for (let j = 0; j < numInputs; j++) {
+        const inputCell = cells[j].getElementsByTagName('input')[0];
+        const inputValue = inputCell.value || '0';
+        minterm.push({ index: j, value: inputValue, label: inputLabels[j] });
+      }
+
+      if (outputValue === '1') {
+        minterms.push(minterm);
+      } else if (outputValue === 'X') {
+        dontCares.push(minterm);
+      }
+    }
+
+    // Optimize the equations
+    let optimizedTerms = optimizeEquations(minterms, dontCares, numInputs);
+
+    // Convert optimized terms to equation
+    let equationTerms = optimizedTerms.map(term => {
+      let termParts = [];
+      for (let input of term) {
+        if (input.value === '-') continue;
+        const varName = input.label;
+        termParts.push(input.value === '1' ? varName : `~${varName}`);
+      }
+      return termParts.length > 0 ? termParts.join('*') : '1';
+    });
+
+    // Additional simplification to match expected form
+    let finalTerms = [];
+    let coveredMinterms = new Set();
+
+    // Recompute coverage to ensure minimal terms
+    optimizedTerms.forEach(term => {
+      let termMinterms = minterms.filter(minterm => isCovered(minterm, term));
+      let newCoverage = termMinterms.filter(minterm => !coveredMinterms.has(minterms.indexOf(minterm)));
+      if (newCoverage.length > 0) {
+        termMinterms.forEach(minterm => coveredMinterms.add(minterms.indexOf(minterm)));
+        let termParts = [];
+        for (let input of term) {
+          if (input.value === '-') continue;
+          const varName = input.label;
+          termParts.push(input.value === '1' ? varName : `~${varName}`);
+        }
+        if (termParts.length > 0) {
+          finalTerms.push(termParts.join('*'));
+        }
+      }
+    });
+
+    if (finalTerms.length === 0) {
+      finalTerms = ['0'];
+    }
+
+    const equation = `${outputLabels[outputIdx]} = ${finalTerms.join(' + ') || '0'}`;
+    equations.push(equation);
+  }
+
+  // Display the equations
+  document.getElementById('booleanEquations').value = equations.join('\n');
+});
+
+// Close the truth table dialog
+document.getElementById('closeTruthTable').addEventListener('click', function() {
+  document.getElementById('truthTableDialog').style.display = 'none';
+});
+  </script>
+</body>
+</html>
