@@ -472,99 +472,435 @@
       }
     }
 
-    class AndGate extends Component {
-      constructor(x, y, numInputs) {
-        super('AND', x, y, numInputs);
-        this.numInputs = Math.max(2, Math.min(numInputs, 10));
-        this.height = 20 + this.numInputs * 20;
-        this.inputPoints = [];
-        this.inputs = [];
+class AndGate extends Component {
+  constructor(x, y, numInputs) {
+    super('AND', x, y, numInputs);
+    this.numInputs = Math.max(2, Math.min(numInputs, 10));
+    this.baseWidth = 60; // Adjusted from the provided code's 120 to fit the existing scale
+    this.baseHeight = Math.max(50, this.numInputs * 30); // Scale height based on number of inputs
+    this.lineLength = 10; // Length of input/output bars
+    this.strokeWeight = 2; // Match existing style
+    this.inputPoints = [];
+    this.inputs = [];
 
-        for (let i = 0; i < this.numInputs; i++) {
-          this.inputPoints.push({
-            x: 0,
-            y: 10 + (i + 1) * (this.height - 20) / (this.numInputs + 1),
-            type: 'input',
-            index: i
-          });
-          this.inputs.push(null);
-        }
+    // Define input points at the leftmost ends of the input bars
+    const inputSpacing = this.baseHeight / (this.numInputs + 1);
+    for (let i = 0; i < this.numInputs; i++) {
+      const yPos = (i + 1) * inputSpacing;
+      this.inputPoints.push({
+        x: -this.lineLength, // Connection point at the leftmost end of the input bar
+        y: yPos,
+        type: 'input',
+        index: i
+      });
+      this.inputs.push(null);
+    }
 
-        this.outputPoints = [
-          { x: this.width, y: this.height/2, type: 'output', index: 0 }
-        ];
-      }
+    // Define output point at the rightmost end of the output bar
+    this.outputPoints = [
+      { x: this.baseWidth + this.lineLength, y: this.baseHeight / 2, type: 'output', index: 0 }
+    ];
+  }
 
-      evaluate() {
-        for (let i = 0; i < this.numInputs; i++) {
-          if (this.inputs[i] === null) {
-            this.value = null;
-            return null;
-          }
-        }
-        this.value = this.inputs.every(input => input === true);
-        return this.value;
+  draw() {
+    push();
+    translate(this.x, this.y);
+
+    // Highlight if selected
+    if (!simulationActive && selectedElement === this) {
+      stroke(0, 100, 255);
+      strokeWeight(4);
+      noFill();
+      // Draw the bounding box around the D-shape, including the input and output bars
+      beginShape();
+      vertex(-this.lineLength, 0); // Start at the leftmost input bar
+      vertex(-this.lineLength, this.baseHeight);
+      vertex(this.baseWidth, this.baseHeight);
+      vertex(this.baseWidth + this.lineLength, this.baseHeight / 2); // Include the output bar
+      vertex(this.baseWidth, 0);
+      vertex(-this.lineLength, 0);
+      endShape(CLOSE);
+    }
+
+    // Draw the D-shape
+    fill(255);
+    stroke(0);
+    strokeWeight(this.strokeWeight);
+    beginShape();
+    vertex(0, 0); // Top-left corner
+    vertex(this.baseWidth / 2, 0); // Top-middle (start of arc)
+    // Draw the curved right side
+    const radiusX = this.baseWidth / 2;
+    const radiusY = this.baseHeight / 2;
+    const centerX = this.baseWidth / 2;
+    const centerY = this.baseHeight / 2;
+    for (let angle = -HALF_PI; angle <= HALF_PI; angle += 0.1) {
+      const x = centerX + radiusX * cos(angle);
+      const y = centerY + radiusY * sin(angle);
+      vertex(x, y);
+    }
+    vertex(0, this.baseHeight); // Bottom-left corner
+    vertex(0, 0); // Close the shape
+    endShape(CLOSE);
+
+    // Draw input bars (horizontal lines on the left)
+    stroke(0);
+    strokeWeight(this.strokeWeight);
+    const inputSpacing = this.baseHeight / (this.numInputs + 1);
+    for (let i = 1; i <= this.numInputs; i++) {
+      const inputY = i * inputSpacing;
+      line(-this.lineLength, inputY, 0, inputY); // Draw from the leftmost point to the D-shape
+    }
+
+    // Draw output bar (horizontal line on the right)
+    line(this.baseWidth, this.baseHeight / 2, this.baseWidth + this.lineLength, this.baseHeight / 2);
+
+    // Draw the label above the gate
+    if (this.label) {
+      fill(0);
+      noStroke();
+      textSize(12);
+      textAlign(CENTER, CENTER);
+      text(this.label, this.baseWidth / 2, -10);
+    }
+
+    // Draw the value during simulation
+    if (simulationActive && this.value !== null) {
+      fill(this.value ? '#4CAF50' : '#F44336');
+      noStroke();
+      textSize(16);
+      text(this.value ? '1' : '0', this.baseWidth + this.lineLength + 15, this.baseHeight / 2);
+    }
+
+    // Draw connection points
+    this.drawPoints();
+
+    pop();
+  }
+
+  drawPoints() {
+    // Draw input points (at the leftmost ends of the input bars)
+    fill(100, 100, 255);
+    for (let point of this.inputPoints) {
+      if (hoverPoint && 
+          hoverPoint.parent === this && 
+          hoverPoint.point.x === point.x && 
+          hoverPoint.point.y === point.y) {
+        fill(255, 100, 100);
+        ellipse(point.x, point.y, 12, 12);
+        fill(100, 100, 255);
+      } else {
+        ellipse(point.x, point.y, 8, 8);
       }
     }
 
-    class OrGate extends Component {
-      constructor(x, y, numInputs) {
-        super('OR', x, y, numInputs);
-        this.numInputs = Math.max(2, Math.min(numInputs, 10));
-        this.height = 20 + this.numInputs * 20;
-        this.inputPoints = [];
-        this.inputs = [];
-
-        for (let i = 0; i < this.numInputs; i++) {
-          this.inputPoints.push({
-            x: 0,
-            y: 10 + (i + 1) * (this.height - 20) / (this.numInputs + 1),
-            type: 'input',
-            index: i
-          });
-          this.inputs.push(null);
-        }
-
-        this.outputPoints = [
-          { x: this.width, y: this.height/2, type: 'output', index: 0 }
-        ];
+    // Draw output points (at the rightmost end of the output bar)
+    fill(255, 100, 100);
+    for (let point of this.outputPoints) {
+      if (hoverPoint && 
+          hoverPoint.parent === this && 
+          hoverPoint.point.x === point.x && 
+          hoverPoint.point.y === point.y) {
+        fill(100, 100, 255);
+        ellipse(point.x, point.y, 12, 12);
+        fill(255, 100, 100);
+      } else {
+        ellipse(point.x, point.y, 8, 8);
       }
+    }
+  }
 
-      evaluate() {
-        for (let i = 0; i < this.numInputs; i++) {
-          if (this.inputs[i] === null) {
-            this.value = null;
-            return null;
-          }
-        }
-        this.value = this.inputs.some(input => input === true);
-        return this.value;
+  evaluate() {
+    // Check if any input is null (not connected or not computed)
+    for (let i = 0; i < this.numInputs; i++) {
+      if (this.inputs[i] === null) {
+        this.value = null;
+        return null;
+      }
+    }
+    // Compute the logical AND of all inputs
+    this.value = this.inputs.every(input => input === true);
+    return this.value;
+  }
+}
+
+class OrGate extends Component {
+  constructor(x, y, numInputs) {
+    super('OR', x, y, numInputs);
+    this.numInputs = Math.max(2, Math.min(numInputs, 10));
+
+    // --- Fixed Horizontal Dimensions ---
+    this.bodyWidth = 60;
+    this.tipWidth = 20;
+    this.inputLineLength = 10;
+    this.outputLineLength = 10;
+    this.inputCurveDepth = 15;
+    this.width = this.bodyWidth + this.tipWidth;
+
+    // --- Vertical Scaling ---
+    this.baseHeight = 50;
+    this.heightPerInput = 20;
+    this.height = this.baseHeight + (this.numInputs - 2) * this.heightPerInput;
+
+    // --- Connection Points ---
+    this.inputPoints = [];
+    this.inputs = [];
+    const inputSpacing = (this.height - 20) / (this.numInputs + 1);
+
+    for (let i = 0; i < this.numInputs; i++) {
+      const yPos = 10 + (i + 1) * inputSpacing;
+      this.inputPoints.push({
+        x: -this.inputLineLength,
+        y: yPos,
+        type: 'input',
+        index: i
+      });
+      this.inputs.push(null);
+    }
+
+    this.outputPoints = [
+      {
+        x: this.bodyWidth + this.tipWidth + this.outputLineLength,
+        y: this.height / 2,
+        type: 'output',
+        index: 0
+      }
+    ];
+  }
+
+draw() {
+  push();
+  translate(this.x, this.y);
+
+  // --- Highlight if selected ---
+  if (!simulationActive && selectedElement === this) {
+    stroke(0, 100, 255);
+    strokeWeight(4);
+    noFill();
+    const totalComponentWidth = this.bodyWidth + this.tipWidth + this.outputLineLength;
+    rect(-this.inputLineLength - 2, -2, this.inputLineLength + totalComponentWidth + 4, this.height + 4, 5);
+  }
+
+  // --- Draw OR Gate shape ---
+  fill(255);
+  stroke(0);
+  strokeWeight(2);
+
+  const midY = this.height / 2;
+  const gateStartX = 0;
+
+  // Points for the input curve (inward, concave)
+  const topLeftCornerX = gateStartX;
+  const topLeftCornerY = 0;
+  const bottomLeftCornerX = gateStartX;
+  const bottomLeftCornerY = this.height;
+
+  // Points for the output curves
+  const tipX = this.bodyWidth + this.tipWidth;
+  const tipY = midY;
+
+  // Control points for output Beziers
+  const outControl1X = this.bodyWidth * 0.7;
+  const outControl1Y = 0;
+  const outControl2X = this.bodyWidth + this.tipWidth * 0.5;
+  const outControl2Y = midY - this.height * 0.2;
+
+  const outControl3X = this.bodyWidth + this.tipWidth * 0.5;
+  const outControl3Y = midY + this.height * 0.2;
+  const outControl4X = this.bodyWidth * 0.7;
+  const outControl4Y = this.height;
+
+  // Control points for input Bezier (inward curve)
+  const inControl1X = this.inputCurveDepth * 0.5;
+  const inControl1Y = this.height * 0.25;
+  const inControl2X = this.inputCurveDepth * 0.5;
+  const inControl2Y = this.height * 0.75;
+
+  // Draw the shape
+  beginShape();
+  vertex(topLeftCornerX, topLeftCornerY);
+  bezierVertex(outControl1X, outControl1Y, outControl2X, outControl2Y, tipX, tipY);
+  bezierVertex(outControl3X, outControl3Y, outControl4X, outControl4Y, bottomLeftCornerX, bottomLeftCornerY);
+  bezierVertex(inControl2X, inControl2Y, inControl1X, inControl1Y, topLeftCornerX, topLeftCornerY);
+  endShape(CLOSE);
+
+  // --- Draw Input Lines ---
+  stroke(0);
+  strokeWeight(2);
+  const inputSpacing = (this.height - 20) / (this.numInputs + 1);
+  for (let i = 0; i < this.numInputs; i++) {
+    const yPos = 10 + (i + 1) * inputSpacing;
+
+    // Calculate t for this yPos
+    const yNormalized = yPos / this.height;
+    const discriminant = 1 + 8 * yNormalized;
+    const t = (-1 + Math.sqrt(discriminant)) / 2;
+
+    // Calculate x at this t
+    const inputLineEndX = this.inputCurveDepth * (1 - t) * t;
+
+    line(-this.inputLineLength, yPos, inputLineEndX, yPos);
+  }
+
+  // --- Draw Output Line ---
+  const outputLineStartX = tipX;
+  line(outputLineStartX, midY, outputLineStartX + this.outputLineLength, midY);
+
+  // --- Draw Label ---
+  if (this.label) {
+    fill(0);
+    noStroke();
+    textSize(12);
+    textAlign(CENTER, CENTER);
+    text(this.label, this.bodyWidth / 2, -10);
+  }
+
+  // --- Draw Connection Points ---
+  this.drawPoints();
+
+  // --- Draw Simulation Value ---
+  if (simulationActive && this.value !== null) {
+    fill(this.value ? '#4CAF50' : '#F44336');
+    noStroke();
+    textSize(16);
+    text(this.value ? '1' : '0', outputLineStartX + this.outputLineLength + 15, midY);
+  }
+
+  pop();
+}
+
+  drawPoints() {
+    fill(100, 100, 255);
+    for (let point of this.inputPoints) {
+      const absX = this.x + point.x;
+      const absY = this.y + point.y;
+      const isHovered = hoverPoint && dist(mouseX, mouseY, absX, absY) < 10;
+
+      if (isHovered) {
+        fill(255, 100, 100);
+        ellipse(point.x, point.y, 12, 12);
+        fill(100, 100, 255);
+      } else {
+        ellipse(point.x, point.y, 8, 8);
       }
     }
 
-    class NotGate extends Component {
-      constructor(x, y) {
-        super('NOT', x, y);
-        this.height = 40;
-        this.inputPoints = [
-          { x: 0, y: 20, type: 'input', index: 0 }
-        ];
-        this.outputPoints = [
-          { x: this.width, y: 20, type: 'output', index: 0 }
-        ];
-        this.inputs = [null];
-      }
+    fill(255, 100, 100);
+    for (let point of this.outputPoints) {
+      const absX = this.x + point.x;
+      const absY = this.y + point.y;
+      const isHovered = hoverPoint && dist(mouseX, mouseY, absX, absY) < 10;
 
-      evaluate() {
-        if (this.inputs[0] === null) {
-          this.value = null;
-          return null;
-        }
-        this.value = !this.inputs[0];
-        return this.value;
+      if (isHovered) {
+        fill(100, 100, 255);
+        ellipse(point.x, point.y, 12, 12);
+        fill(255, 100, 100);
+      } else {
+        ellipse(point.x, point.y, 8, 8);
       }
     }
+  }
 
+  evaluate() {
+    for (let i = 0; i < this.numInputs; i++) {
+      if (this.inputs[i] === null) {
+        this.value = null;
+        return null;
+      }
+    }
+    this.value = this.inputs.some(input => input === true);
+    return this.value;
+  }
+}
+class NotGate extends Component {
+  constructor(x, y) {
+    super('NOT', x, y);
+    this.width = 40; // Define width for the gate (triangle + circle + lines)
+    this.height = 40;
+    this.inputLineLength = 10; // Length of input line
+    this.outputLineLength = 10; // Length of output line
+    this.circleRadius = 4; // Radius of the inversion circle
+
+    // Adjust input and output points to align with the design
+    this.inputPoints = [
+      { x: -this.inputLineLength, y: this.height / 2, type: 'input', index: 0 }
+    ];
+    this.outputPoints = [
+      { x: this.width + this.outputLineLength, y: this.height / 2, type: 'output', index: 0 }
+    ];
+    this.inputs = [null];
+  }
+
+  draw() {
+    push();
+    translate(this.x, this.y);
+
+    // --- Highlight if selected ---
+    if (!simulationActive && selectedElement === this) {
+      stroke(0, 100, 255);
+      strokeWeight(4);
+      noFill();
+      rect(-this.inputLineLength - 2, -2, this.inputLineLength + this.width + this.outputLineLength + 4, this.height + 4, 5);
+    }
+
+    // --- Draw NOT Gate shape ---
+    fill(255);
+    stroke(0);
+    strokeWeight(2);
+
+    const midY = this.height / 2;
+    const triangleBaseWidth = this.width - this.circleRadius * 2; // Leave space for the circle
+
+    // Draw the triangle
+    beginShape();
+    vertex(0, 0); // Top-left of the triangle base
+    vertex(triangleBaseWidth, midY); // Right apex of the triangle
+    vertex(0, this.height); // Bottom-left of the triangle base
+    endShape(CLOSE);
+
+    // Draw the inversion circle at the apex
+    const circleX = triangleBaseWidth;
+    const circleY = midY;
+    ellipse(circleX, circleY, this.circleRadius * 2, this.circleRadius * 2);
+
+    // Draw the input line
+    line(-this.inputLineLength, midY, 0, midY);
+
+    // Draw the output line
+    line(circleX + this.circleRadius, midY, circleX + this.circleRadius + this.outputLineLength, midY);
+
+    // --- Draw Label ---
+    if (this.label) {
+      fill(0);
+      noStroke();
+      textSize(12);
+      textAlign(CENTER, CENTER);
+      text(this.label, triangleBaseWidth / 2, -10);
+    }
+
+    // --- Draw Connection Points ---
+    this.drawPoints();
+
+    // --- Draw Simulation Value ---
+    if (simulationActive && this.value !== null) {
+      fill(this.value ? '#4CAF50' : '#F44336');
+      noStroke();
+      textSize(16);
+      text(this.value ? '1' : '0', this.width + this.outputLineLength + 15, midY);
+    }
+
+    pop();
+  }
+
+  evaluate() {
+    if (this.inputs[0] === null) {
+      this.value = null;
+      return null;
+    }
+    this.value = !this.inputs[0];
+    return this.value;
+  }
+}
     class Display extends Component {
       constructor(x, y) {
         super('DISPLAY', x, y);
